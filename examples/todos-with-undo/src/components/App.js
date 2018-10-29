@@ -3,7 +3,7 @@ import Footer from './Footer'
 import AddTodo from '../containers/AddTodo'
 import VisibleTodoList from '../containers/VisibleTodoList'
 import UndoRedo from '../containers/UndoRedo'
-
+console.log(UndoRedo)
 const App = () => (
   <div>
     <AddTodo />

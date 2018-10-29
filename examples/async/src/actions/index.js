@@ -27,7 +27,16 @@ export const receivePosts = (reddit, json) => ({
 
 const fetchPosts = reddit => dispatch => {
   dispatch(requestPosts(reddit))
-  return fetch(`https://www.reddit.com/r/${reddit}.json`)
+  return new Promise((resolve) => {
+    resolve({
+      json () {
+        return {
+          data: { children: [{ data: { title: 'libaoxu' } }] }
+        }
+      }
+    })
+  })
+  // return fetch(`https://www.reddit.com/r/${reddit}.json`)
     .then(response => response.json())
     .then(json => dispatch(receivePosts(reddit, json)))
 }
