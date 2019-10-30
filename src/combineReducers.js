@@ -98,6 +98,7 @@ function assertReducerShape(reducers) {
  *
  * @returns {Function} A reducer function that invokes every reducer inside the
  * passed object, and builds a state object with the same shape.
+ * 创建完reducer给store, 如: createStore(combineReducers({ todos }))
  */
 export default function combineReducers(reducers) {
   const reducerKeys = Object.keys(reducers)
@@ -128,7 +129,7 @@ export default function combineReducers(reducers) {
   } catch (e) {
     shapeAssertionError = e
   }
-
+  // 这个combination就是执行具体reducer的函数, dispatch action 中调用的reducer就是执行这个函数
   return function combination(state = {}, action) {
     if (shapeAssertionError) {
       throw shapeAssertionError
@@ -147,6 +148,9 @@ export default function combineReducers(reducers) {
       const key = finalReducerKeys[i]
       const reducer = finalReducers[key]
       const previousStateForKey = state[key]
+      // 这块就神奇了, 这个reducer可以是普通的纯函数, 如: function todo (state = initialState, action) {}
+      // 也可以是通过combineReducer创建的combination函数, 可以看到combination也是接受两个参数, 这样就可以执行模块化下reducer(reducer下还可以再继续创建reducer)
+      // 如: combineReducer({ todos, totosNext: combineReducer({ todosNext }) })
       const nextStateForKey = reducer(previousStateForKey, action)
       if (typeof nextStateForKey === 'undefined') {
         const errorMessage = getUndefinedStateErrorMessage(key, action)

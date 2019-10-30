@@ -21,6 +21,7 @@ export const ActionTypes = {
  *
  * @param {Function} reducer A function that returns the next state tree, given
  * the current state tree and the action to handle.
+ * 接收通过combineReducers创建的reducer, 在dispach时会调用, 这样执行reducer中的纯函数
  *
  * @param {any} [preloadedState] The initial state. You may optionally specify it
  * to hydrate the state from the server in universal apps, or to restore a
@@ -32,6 +33,9 @@ export const ActionTypes = {
  * to enhance the store with third-party capabilities such as middleware,
  * time travel, persistence, etc. The only store enhancer that ships with Redux
  * is `applyMiddleware()`.
+ * enhancer是通过applyMiddleware创建的高阶函数, 这个函数是createStore的装饰器, 包裹createStore, 并返回一个代理函数结束同样的参数, 大概结构如下: function enhancer (createStore) { return function createStoreProxy (reducer, preloadState, enhancer) {} }
+ * 这样目的可以在*enhancer(createStore)*所创建的函数的内部执行真正的createStore逻辑, 为了在内部拿到createStore创建的*store*, 拿到store就可以在store的dispatch再加入代理, 来处理中间件相关逻辑了, 哈哈哈
+ * 详见`applyMiddleware.js`L29
  *
  * @returns {Store} A Redux store that lets you read the state, dispatch actions
  * and subscribe to changes.
@@ -166,7 +170,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
     }
 
     try {
-      isDispatching = true
+      isDispatching = true // 从代码中可以很明确的看到, redux是同步的同步同步的, 之所以是可以支持异步的action, 是通过中间件 异步的调用了 dispatch, 但是一旦调用dispatch就是同步的更改state
       currentState = currentReducer(currentState, action)
     } finally {
       isDispatching = false

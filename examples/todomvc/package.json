@@ -5,7 +5,8 @@
   "devDependencies": {
     "enzyme": "^2.8.2",
     "react-addons-test-utils": "^15.5.1",
-    "react-scripts": "^1.0.2"
+    "react-scripts": "^1.0.2",
+    "redux-thunk": "^2.3.0"
   },
   "dependencies": {
     "classnames": "^2.2.5",
@@ -14,7 +15,7 @@
     "react-dom": "^15.5.0",
     "react-redux": "^5.0.5",
     "react-test-renderer": "^15.5.4",
-    "redux": "^3.5.2",
+    "redux": "^3.7.2",
     "todomvc-app-css": "^2.1.0"
   },
   "scripts": {

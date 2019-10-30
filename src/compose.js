@@ -7,6 +7,15 @@
  * @returns {Function} A function obtained by composing the argument functions
  * from right to left. For example, compose(f, g, h) is identical to doing
  * (...args) => f(g(h(...args))).
+ *
+ * const middlewares = [middleware1, middleware2, middleware3, middleware4]
+ *
+ * const dispatch = middleware1(middleware2(middleware3(middleware4(store.dispatch))))
+ *
+ * 两种等价, 因为在用户端只能传入middleware的数组, 不能执行, 只能通过compose来完成上面的结果
+ * const dispatch = compose(...middlewares)(store.dispatch)
+ *
+ * dispatch(action)
  */
 
 export default function compose(...funcs) {
