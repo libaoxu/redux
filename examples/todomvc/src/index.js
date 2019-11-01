@@ -7,10 +7,12 @@ import reducer from './reducers'
 import 'todomvc-app-css/index.css'
 import thunk from 'redux-thunk'
 import logger from './redux-logger'
+import { setStore } from './reducers/todos'
 // import './compose.test'
 
 const middlewares = [logger, thunk]
-const enhancers = [applyMiddleware(...middlewares)]
+const middlewareEnhancer = applyMiddleware(...middlewares)
+const enhancers = [middlewareEnhancer]
 
 const composeEnhancers =
   process.env.NODE_ENV !== 'production' &&
@@ -23,7 +25,8 @@ const composeEnhancers =
 
 
 // const store = createStore(reducer, compose(...enhancers))
-const store = createStore(reducer, enhancers[0])
+const store = createStore(reducer, middlewareEnhancer)
+setStore(store)
 
 render(
   <Provider store={store}>

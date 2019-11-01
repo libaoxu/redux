@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
+  <title>Listeners</title>
+</head>
+<body>
+
+<script>
+let currentListeners = []
+let nextListeners = currentListeners
+let unSubscribe2
+let unSubscribe3
+let unSubscribe4
+
+function fn1 () {
+  console.log('fn1')
+  // if (xxx !== xxx && xxx === xxx) {}
+}
+function fn2 () {
+  console.log('fn2')
+}
+function fn3 () {
+  console.log('fn3')
+  unSubscribe1()
+  unSubscribe2()
+  unSubscribe3()
+}
+function fn4 () {
+  console.log('fn4')
+}
+
+function getCanMutateListeners() {
+  if (currentListeners === nextListeners) {
+    nextListeners = currentListeners.slice()
+  }
+  return nextListeners
+}
+
+function subscribe (fn) {
+  let listeners = getCanMutateListeners()
+  listeners.push(fn)
+
+  return function unsubscribe() {
+    listeners = getCanMutateListeners()
+    const index = listeners.indexOf(fn)
+    listeners.splice(index, 1)
+  }
+}
+
+function publish () {
+  const listeners = currentListeners = nextListeners
+  for (let i = 0; i < listeners.length; i++) {
+  // for (let i = 0, len = listeners.length; i < len; i++) {
+    const listener = listeners[i]
+    listener()
+  }
+}
+
+unSubscribe1 = subscribe(fn1)
+unSubscribe2 = subscribe(fn2)
+unSubscribe3 = subscribe(fn3)
+unSubscribe4 = subscribe(fn4)
+
+// 综上 在listener触发期间, 对所有的subscribe 和 unSubscribe的操作, 都是针对nextListners的, 对当前触发队列currentListeners没有任何影响
+// 仅当下一此publish才会
+</script>
+</body>
+</html>

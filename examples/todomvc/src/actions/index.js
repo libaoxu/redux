@@ -17,6 +17,8 @@ import * as types from '../constants/ActionTypes'
  *   }
  * }
  */
+let store
+export const setStore = _store => store = _store
 export const addTodo = text => (dispatch, getState) => {
   // console.log(dispatch, getState, text)
   return dispatch({ type: types.ADD_TODO, text })

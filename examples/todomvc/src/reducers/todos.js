@@ -8,9 +8,23 @@ const initialState = [
   }
 ]
 
+let store
+let unsubscribe
+export const setStore = _store => store = _store
 export default function todos(state = initialState, action) {
   switch (action.type) {
     case ADD_TODO:
+      if (store) {
+        if (unsubscribe) {
+          unsubscribe()
+        }
+        unsubscribe = store.subscribe(function subscribe1(e) {
+          store.subscribe(function subscribe2(params) {
+            console.log('subscribe2: ')
+          })
+          console.log('subscribe1 change:')
+        })
+      }
       return [
         {
           id: state.reduce((maxId, todo) => Math.max(todo.id, maxId), -1) + 1,

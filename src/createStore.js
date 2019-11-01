@@ -50,7 +50,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
     if (typeof enhancer !== 'function') {
       throw new Error('Expected the enhancer to be a function.')
     }
-
+    // 为什么不是enhancer(createStore, reducer, preloadedState), 而一定要这样设计?, 原因在于enhancer是一个可以继续被装饰的 装饰器
     return enhancer(createStore)(reducer, preloadedState)
   }
 
@@ -64,7 +64,16 @@ export default function createStore(reducer, preloadedState, enhancer) {
   let nextListeners = currentListeners
   let isDispatching = false
 
+  /**
+   * This makes a shallow copy of currentListeners so we can use
+   * nextListeners as a temporary list while dispatching.
+   *
+   * This prevents any bugs around consumers calling
+   * subscribe/unsubscribe in the middle of a dispatch.
+   * 这个意思就是, 如果在dispatch函数里, 可能存在subscribe, 那么就会存在bug
+   */
   function ensureCanMutateNextListeners() {
+    // 这句话表示已经是dispatch过了, 因为在dispatch里, 将nextListeners赋值给了currentListeners, 所以是相等的, 这里将将相等的两个队列, 进行浅拷贝, 后面只修改nextListener就不会影响currentListener
     if (nextListeners === currentListeners) {
       nextListeners = currentListeners.slice()
     }
@@ -76,6 +85,14 @@ export default function createStore(reducer, preloadedState, enhancer) {
    * @returns {any} The current state tree of your application.
    */
   function getState() {
+    if (isDispatching) {
+      throw new Error(
+        'You may not call store.getState() while the reducer is executing. ' +
+        'The reducer has already received the state as an argument. ' +
+        'Pass it down from the top reducer instead of reading it from the store.'
+      )
+    }
+
     return currentState
   }
 
@@ -110,7 +127,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
     let isSubscribed = true
 
     ensureCanMutateNextListeners()
-    nextListeners.push(listener)
+    nextListeners.push(listener) // 这个时候, currentListener是不变的, nextListeners中队列变长,
 
     return function unsubscribe() {
       if (!isSubscribed) {
@@ -164,7 +181,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
         'Have you misspelled a constant?'
       )
     }
-
+    // 这样就可以禁止在在reducer中调用dispatch了
     if (isDispatching) {
       throw new Error('Reducers may not dispatch actions.')
     }
@@ -176,7 +193,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
       isDispatching = false
     }
 
-    const listeners = currentListeners = nextListeners
+    const listeners = currentListeners = nextListeners // 只有当dispatch时候, 会将currentListener进行与nextListeners同步, subscribe只往nextListeners进行订阅
     for (let i = 0; i < listeners.length; i++) {
       const listener = listeners[i]
       listener()
