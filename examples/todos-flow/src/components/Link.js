@@ -1,10 +1,10 @@
 // @flow
 
-import React from 'react';
+import React, { type Node } from 'react';
 
 export type Props = {
   active: boolean,
-  children?: React$Element<any>,
+  children?: Node,
   onClick: () => void
 };
 
@@ -14,7 +14,7 @@ const Link = ({ active, children, onClick }: Props) => {
   }
 
   return (
-    <a // eslint-disable-line jsx-a11y/href-no-hash
+    <a // eslint-disable-line jsx-a11y/anchor-is-valid
       href="#"
       onClick={(event: Event) => {
         event.preventDefault();

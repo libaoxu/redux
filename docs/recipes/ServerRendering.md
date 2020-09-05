@@ -1,6 +1,12 @@
+---
+id: server-rendering
+title: Server Rendering
+hide_title: true
+---
+
 # Server Rendering
 
-The most common use case for server-side rendering is to handle the _initial render_ when a user (or search engine crawler) first requests our app.  When the server receives the request, it renders the required component(s) into an HTML string, and then sends it as a response to the client.  From that point on, the client takes over rendering duties.
+The most common use case for server-side rendering is to handle the _initial render_ when a user (or search engine crawler) first requests our app. When the server receives the request, it renders the required component(s) into an HTML string, and then sends it as a response to the client. From that point on, the client takes over rendering duties.
 
 We will use React in the examples below, but the same techniques can be used with other view frameworks that can render on the server.
 
@@ -10,24 +16,24 @@ When using Redux with server rendering, we must also send the state of our app a
 
 To send the data down to the client, we need to:
 
-* create a fresh, new Redux store instance on every request;
-* optionally dispatch some actions;
-* pull the state out of store;
-* and then pass the state along to the client.
+- create a fresh, new Redux store instance on every request;
+- optionally dispatch some actions;
+- pull the state out of store;
+- and then pass the state along to the client.
 
-On the client side, a new Redux store will be created and initialized with the state provided from the server.  
+On the client side, a new Redux store will be created and initialized with the state provided from the server.
 Redux's **_only_** job on the server side is to provide the **initial state** of our app.
 
 ## Setting Up
 
-In the following recipe, we are going to look at how to set up server-side rendering. We'll use the simplistic [Counter app](https://github.com/reactjs/redux/tree/master/examples/counter) as a guide and show how the server can render state ahead of time based on the request.
+In the following recipe, we are going to look at how to set up server-side rendering. We'll use the simplistic [Counter app](https://github.com/reduxjs/redux/tree/master/examples/counter) as a guide and show how the server can render state ahead of time based on the request.
 
 ### Install Packages
 
 For this example, we'll be using [Express](http://expressjs.com/) as a simple web server. We also need to install the React bindings for Redux, since they are not included in Redux by default.
 
-```
-npm install --save express react-redux
+```sh
+npm install express react-redux
 ```
 
 ## The Server Side
@@ -57,15 +63,19 @@ app.use('/static', Express.static('static'))
 app.use(handleRender)
 
 // We are going to fill these out in the sections to follow
-function handleRender(req, res) { /* ... */ }
-function renderFullPage(html, preloadedState) { /* ... */ }
+function handleRender(req, res) {
+  /* ... */
+}
+function renderFullPage(html, preloadedState) {
+  /* ... */
+}
 
 app.listen(port)
 ```
 
 ### Handling the Request
 
-The first thing that we need to do on every request is create a new Redux store instance. The only purpose of this store instance is to provide the initial state of our application.
+The first thing that we need to do on every request is to create a new Redux store instance. The only purpose of this store instance is to provide the initial state of our application.
 
 When rendering, we will wrap `<App />`, our root component, inside a `<Provider>` to make the store available to all components in the component tree, as we saw in [Usage with React](../basics/UsageWithReact.md).
 
@@ -115,8 +125,11 @@ function renderFullPage(html, preloadedState) {
         <div id="root">${html}</div>
         <script>
           // WARNING: See the following for security issues around embedding JSON in HTML:
-          // http://redux.js.org/docs/recipes/ServerRendering.html#security-considerations
-          window.__PRELOADED_STATE__ = ${JSON.stringify(preloadedState).replace(/</g, '\\u003c')}
+          // https://redux.js.org/recipes/server-rendering/#security-considerations
+          window.__PRELOADED_STATE__ = ${JSON.stringify(preloadedState).replace(
+            /</g,
+            '\\u003c'
+          )}
         </script>
         <script src="/static/bundle.js"></script>
       </body>
@@ -135,7 +148,7 @@ Let's take a look at our new client file:
 
 ```js
 import React from 'react'
-import { render } from 'react-dom'
+import { hydrate } from 'react-dom'
 import { createStore } from 'redux'
 import { Provider } from 'react-redux'
 import App from './containers/App'
@@ -150,7 +163,7 @@ delete window.__PRELOADED_STATE__
 // Create Redux store with initial state
 const store = createStore(counterApp, preloadedState)
 
-render(
+hydrate(
   <Provider store={store}>
     <App />
   </Provider>,
@@ -160,7 +173,7 @@ render(
 
 You can set up your build tool of choice (Webpack, Browserify, etc.) to compile a bundle file into `static/bundle.js`.
 
-When the page loads, the bundle file will be started up and [`ReactDOM.render()`](https://facebook.github.io/react/docs/top-level-api.html#reactdom.render) will hook into the `data-react-id` attributes from the server-rendered HTML. This will connect our newly-started React instance to the virtual DOM used on the server. Since we have the same initial state for our Redux store and used the same code for all our view components, the result will be the same real DOM.
+When the page loads, the bundle file will be started up and [`ReactDOM.hydrate()`](https://reactjs.org/docs/react-dom.html#hydrate) will reuse the server-rendered HTML. This will connect our newly-started React instance to the virtual DOM used on the server. Since we have the same initial state for our Redux store and used the same code for all our view components, the result will be the same real DOM.
 
 And that's it! That is all we need to do to implement server side rendering.
 
@@ -174,7 +187,7 @@ Because the client side executes ongoing code, it can start with an empty initia
 
 The only input for server side code is the request made when loading up a page in your app in your browser. You may choose to configure the server during its boot (such as when you are running in a development vs. production environment), but that configuration is static.
 
-The request contains information about the URL requested, including any query parameters, which will be useful when using something like [React Router](https://github.com/reactjs/react-router). It can also contain headers with inputs like cookies or authorization, or POST body data. Let's see how we can set the initial counter state based on a query parameter.
+The request contains information about the URL requested, including any query parameters, which will be useful when using something like [React Router](https://github.com/ReactTraining/react-router). It can also contain headers with inputs like cookies or authorization, or POST body data. Let's see how we can set the initial counter state based on a query parameter.
 
 #### `server.js`
 
@@ -280,7 +293,7 @@ Because we have introduced more code that relies on user generated content (UGC)
 
 In our example, we take a rudimentary approach to security. When we obtain the parameters from the request, we use `parseInt` on the `counter` parameter to ensure this value is a number. If we did not do this, you could easily get dangerous data into the rendered HTML by providing a script tag in the request. That might look like this: `?counter=</script><script>doSomethingBad();</script>`
 
-For our simplistic example, coercing our input into a number is sufficiently secure. If you're handling more complex input, such as freeform text, then you should run that input through an appropriate sanitization function, such as [validator.js](https://www.npmjs.com/package/validator).
+For our simplistic example, coercing our input into a number is sufficiently secure. If you're handling more complex input, such as freeform text, then you should run that input through an appropriate sanitization function, such as [xss-filters](https://github.com/yahoo/xss-filters).
 
 Furthermore, you can add additional layers of security by sanitizing your state output. `JSON.stringify` can be subject to script injections. To counter this, you can scrub the JSON string of HTML tags and other dangerous characters. This can be done with either a simple text replacement on the string, e.g. `JSON.stringify(state).replace(/</g, '\\u003c')`, or via more sophisticated libraries such as [serialize-javascript](https://github.com/yahoo/serialize-javascript).
 
@@ -288,4 +301,4 @@ Furthermore, you can add additional layers of security by sanitizing your state 
 
 You may want to read [Async Actions](../advanced/AsyncActions.md) to learn more about expressing asynchronous flow in Redux with async primitives such as Promises and thunks. Keep in mind that anything you learn there can also be applied to universal rendering.
 
-If you use something like [React Router](https://github.com/reactjs/react-router), you might also want to express your data fetching dependencies as static `fetchData()` methods on your route handler components. They may return [async actions](../advanced/AsyncActions.md), so that your `handleRender` function can match the route to the route handler component classes, dispatch `fetchData()` result for each of them, and render only after the Promises have resolved. This way the specific API calls required for different routes are colocated with the route handler component definitions. You can also use the same technique on the client side to prevent the router from switching the page until its data has been loaded.
+If you use something like [React Router](https://github.com/ReactTraining/react-router), you might also want to express your data fetching dependencies as static `fetchData()` methods on your route handler components. They may return [async actions](../advanced/AsyncActions.md), so that your `handleRender` function can match the route to the route handler component classes, dispatch `fetchData()` result for each of them, and render only after the Promises have resolved. This way the specific API calls required for different routes are colocated with the route handler component definitions. You can also use the same technique on the client side to prevent the router from switching the page until its data has been loaded.

@@ -1,3 +1,9 @@
+---
+id: reducing-boilerplate
+title: Reducing Boilerplate
+hide_title: true
+---
+
 # Reducing Boilerplate
 
 Redux is in part [inspired by Flux](../introduction/PriorArt.md), and the most common complaint about Flux is how it makes you write a lot of boilerplate. In this recipe, we will consider how Redux lets us choose how verbose we'd like our code to be, depending on personal style, team preferences, longer term maintainability, and so on.
@@ -28,10 +34,10 @@ const LOAD_ARTICLE = 'LOAD_ARTICLE'
 
 Why is this beneficial? **It is often claimed that constants are unnecessary, and for small projects, this might be correct.** For larger projects, there are some benefits to defining action types as constants:
 
-* It helps keep the naming consistent because all action types are gathered in a single place.
-* Sometimes you want to see all existing actions before working on a new feature. It may be that the action you need was already added by somebody on the team, but you didn't know.
-* The list of action types that were added, removed, and changed in a Pull Request helps everyone on the team keep track of scope and implementation of new features.
-* If you make a typo when importing an action constant, you will get `undefined`. Redux will immediately throw when dispatching such an action, and you'll find the mistake sooner.
+- It helps keep the naming consistent because all action types are gathered in a single place.
+- Sometimes you want to see all existing actions before working on a new feature. It may be that the action you need was already added by somebody on the team, but you didn't know.
+- The list of action types that were added, removed, and changed in a Pull Request helps everyone on the team keep track of scope and implementation of new features.
+- If you make a typo when importing an action constant, you will get `undefined`. Redux will immediately throw when dispatching such an action, and you'll find the mistake sooner.
 
 It is up to you to choose the conventions for your project. You may start by using inline strings, and later transition to constants, and maybe later group them into a single file. Redux does not have any opinion here, so use your best judgment.
 
@@ -133,7 +139,7 @@ You can always write a function that generates an action creator:
 ```js
 function makeActionCreator(type, ...argNames) {
   return function (...args) {
-    let action = { type }
+    const action = { type }
     argNames.forEach((arg, index) => {
       action[argNames[index]] = args[index]
     })
@@ -149,13 +155,14 @@ export const addTodo = makeActionCreator(ADD_TODO, 'text')
 export const editTodo = makeActionCreator(EDIT_TODO, 'id', 'text')
 export const removeTodo = makeActionCreator(REMOVE_TODO, 'id')
 ```
+
 There are also utility libraries to aid in generating action creators, such as [redux-act](https://github.com/pauldijou/redux-act) and [redux-actions](https://github.com/acdlite/redux-actions). These can help reduce boilerplate code and enforce adherence to standards such as [Flux Standard Action (FSA)](https://github.com/acdlite/flux-standard-action).
 
 ## Async Action Creators
 
 [Middleware](../Glossary.md#middleware) lets you inject custom logic that interprets every action object before it is dispatched. Async actions are the most common use case for middleware.
 
-Without any middleware, [`dispatch`](../api/Store.md#dispatch) only accepts a plain object, so we have to perform AJAX calls inside our components:
+Without any middleware, [`dispatch`](../api/Store.md#dispatchaction) only accepts a plain object, so we have to perform AJAX calls inside our components:
 
 #### `actionCreators.js`
 
@@ -198,7 +205,7 @@ import {
 class Posts extends Component {
   loadData(userId) {
     // Injected into props by React Redux `connect()` call:
-    let { dispatch, posts } = this.props
+    const { dispatch, posts } = this.props
 
     if (posts[userId]) {
       // There is cached data! Don't do anything.
@@ -220,9 +227,9 @@ class Posts extends Component {
     this.loadData(this.props.userId)
   }
 
-  componentWillReceiveProps(nextProps) {
-    if (nextProps.userId !== this.props.userId) {
-      this.loadData(nextProps.userId)
+  componentDidUpdate(prevProps) {
+    if (prevProps.userId !== this.props.userId) {
+      this.loadData(this.props.userId)
     }
   }
 
@@ -231,16 +238,17 @@ class Posts extends Component {
       return <p>Loading...</p>
     }
 
-    let posts = this.props.posts.map(post =>
+    const posts = this.props.posts.map(post => (
       <Post post={post} key={post.id} />
-    )
+    ))
 
     return <div>{posts}</div>
   }
 }
 
 export default connect(state => ({
-  posts: state.posts
+  posts: state.posts,
+  isFetching: state.isFetching
 }))(Posts)
 ```
 
@@ -250,9 +258,9 @@ However, this quickly gets repetitive because different components request data 
 
 The simplest example of middleware is [redux-thunk](https://github.com/gaearon/redux-thunk). **“Thunk” middleware lets you write action creators as “thunks”, that is, functions returning functions.** This inverts the control: you will get `dispatch` as an argument, so you can write an action creator that dispatches many times.
 
->##### Note
-
->Thunk middleware is just one example of middleware. Middleware is not about “letting you dispatch functions”. It's about letting you dispatch anything that the particular middleware you use knows how to handle. Thunk middleware adds a specific behavior when you dispatch functions, but it really depends on the middleware you use.
+> ##### Note
+>
+> Thunk middleware is just one example of middleware. Middleware is not about “letting you dispatch functions”. It's about letting you dispatch anything that the particular middleware you use knows how to handle. Thunk middleware adds a specific behavior when you dispatch functions, but it really depends on the middleware you use.
 
 Consider the code above rewritten with [redux-thunk](https://github.com/gaearon/redux-thunk):
 
@@ -262,7 +270,7 @@ Consider the code above rewritten with [redux-thunk](https://github.com/gaearon/
 export function loadPosts(userId) {
   // Interpreted by the thunk middleware:
   return function (dispatch, getState) {
-    let { posts } = getState()
+    const { posts } = getState()
     if (posts[userId]) {
       // There is cached data! Don't do anything.
       return
@@ -304,9 +312,9 @@ class Posts extends Component {
     this.props.dispatch(loadPosts(this.props.userId))
   }
 
-  componentWillReceiveProps(nextProps) {
-    if (nextProps.userId !== this.props.userId) {
-      this.props.dispatch(loadPosts(nextProps.userId))
+  componentDidUpdate(prevProps) {
+    if (prevProps.userId !== this.props.userId) {
+      this.props.dispatch(loadPosts(this.props.userId))
     }
   }
 
@@ -315,16 +323,17 @@ class Posts extends Component {
       return <p>Loading...</p>
     }
 
-    let posts = this.props.posts.map(post =>
+    const posts = this.props.posts.map(post => (
       <Post post={post} key={post.id} />
-    )
+    ))
 
     return <div>{posts}</div>
   }
 }
 
 export default connect(state => ({
-  posts: state.posts
+  posts: state.posts,
+  isFetching: state.isFetching
 }))(Posts)
 ```
 
@@ -352,12 +361,7 @@ The middleware that interprets such actions could look like this:
 ```js
 function callAPIMiddleware({ dispatch, getState }) {
   return next => action => {
-    const {
-      types,
-      callAPI,
-      shouldCallAPI = () => true,
-      payload = {}
-    } = action
+    const { types, callAPI, shouldCallAPI = () => true, payload = {} } = action
 
     if (!types) {
       // Normal action: pass it on
@@ -461,7 +465,7 @@ Redux reduces the boilerplate of Flux stores considerably by describing the upda
 Consider this Flux store:
 
 ```js
-let _todos = []
+const _todos = []
 
 const TodoStore = Object.assign({}, EventEmitter.prototype, {
   getAll() {
@@ -472,7 +476,7 @@ const TodoStore = Object.assign({}, EventEmitter.prototype, {
 AppDispatcher.register(function (action) {
   switch (action.type) {
     case ActionTypes.ADD_TODO:
-      let text = action.text.trim()
+      const text = action.text.trim()
       _todos.push(text)
       TodoStore.emitChange()
   }
@@ -487,7 +491,7 @@ With Redux, the same update logic can be described as a reducing function:
 export function todos(state = [], action) {
   switch (action.type) {
     case ActionTypes.ADD_TODO:
-      let text = action.text.trim()
+      const text = action.text.trim()
       return [...state, text]
     default:
       return state
@@ -495,7 +499,7 @@ export function todos(state = [], action) {
 }
 ```
 
-The `switch` statement is *not* the real boilerplate. The real boilerplate of Flux is conceptual: the need to emit an update, the need to register the Store with a Dispatcher, the need for the Store to be an object (and the complications that arise when you want a universal app).
+The `switch` statement is _not_ the real boilerplate. The real boilerplate of Flux is conceptual: the need to emit an update, the need to register the Store with a Dispatcher, the need for the Store to be an object (and the complications that arise when you want a universal app).
 
 It's unfortunate that many still choose Flux framework based on whether it uses `switch` statements in the documentation. If you don't like `switch`, you can solve this with a single function, as we show below.
 
@@ -505,8 +509,8 @@ Let's write a function that lets us express reducers as an object mapping from a
 
 ```js
 export const todos = createReducer([], {
-  [ActionTypes.ADD_TODO](state, action) {
-    let text = action.text.trim()
+  [ActionTypes.ADD_TODO]: (state, action) => {
+    const text = action.text.trim()
     return [...state, text]
   }
 })
@@ -528,4 +532,4 @@ function createReducer(initialState, handlers) {
 
 This wasn't difficult, was it? Redux doesn't provide such a helper function by default because there are many ways to write it. Maybe you want it to automatically convert plain JS objects to Immutable objects to hydrate the server state. Maybe you want to merge the returned state with the current state. There may be different approaches to a “catch all” handler. All of this depends on the conventions you choose for your team on a specific project.
 
-The Redux reducer API is `(state, action) => state`, but how you create those reducers is up to you.
+The Redux reducer API is `(state, action) => newState`, but how you create those reducers is up to you.

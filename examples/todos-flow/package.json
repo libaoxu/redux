@@ -1,23 +1,21 @@
 {
   "name": "todos-flow",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "private": true,
   "devDependencies": {
-    "enzyme": "^2.8.2",
-    "flow-bin": "^0.48.0",
-    "flow-typed": "^2.1.2",
-    "react-addons-test-utils": "^15.5.1",
-    "react-scripts": "^1.0.7",
-    "react-test-renderer": "^15.5.4",
-    "redux-mock-store": "^1.2.3"
+    "enzyme": "^3.11.0",
+    "enzyme-adapter-react-16": "^1.15.2",
+    "flow-bin": "^0.78.0",
+    "flow-typed": "2.5.1",
+    "react-scripts": "^3.4.1",
+    "redux-mock-store": "1.5.3"
   },
   "dependencies": {
-    "jest": "^20.0.4",
-    "react": "^15.5.0",
-    "react-dom": "^15.5.0",
-    "react-redux": "^5.0.5",
-    "redux": "^3.5.2",
-    "reselect": "^3.0.1"
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "react-redux": "^7.2.0",
+    "redux": "^4.0.5",
+    "reselect": "^4.0.0"
   },
   "scripts": {
     "build": "react-scripts build",
@@ -25,6 +23,12 @@
     "flow": "flow",
     "postinstall": "flow-typed install",
     "start": "react-scripts start",
-    "test": "react-scripts test --env=jsdom"
-  }
+    "test": "react-scripts test --env=node"
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not ie <= 11",
+    "not op_mini all"
+  ]
 }

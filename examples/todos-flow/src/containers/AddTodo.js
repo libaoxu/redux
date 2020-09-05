@@ -6,7 +6,6 @@ import { connect } from 'react-redux';
 import { addTodo } from '../actions/todos';
 
 import type { Dispatch } from '../types';
-import type { Connector } from 'react-redux';
 
 export type Props = {
   dispatch: Dispatch
@@ -16,13 +15,12 @@ export type State = {
   value: string
 };
 
-class AddTodo extends Component<void, Props, State> {
-  input: HTMLInputElement;
+class AddTodo extends Component<Props, State> {
   state = {
     value: ''
   };
-  handleChange = (event: Event & { target: HTMLInputElement }) => {
-    this.setState({ value: event.target.value });
+  handleChange = (event: SyntheticKeyboardEvent<HTMLInputElement>) => {
+    this.setState({ value: event.currentTarget.value });
   };
   handleSubmit = (event: Event) => {
     event.preventDefault();
@@ -46,6 +44,4 @@ class AddTodo extends Component<void, Props, State> {
   }
 }
 
-const connector: Connector<{}, Props> = connect();
-
-export default connector(AddTodo);
+export default connect()(AddTodo);

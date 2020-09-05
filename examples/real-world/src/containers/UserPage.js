@@ -1,6 +1,9 @@
+/* eslint-disable no-undef */
+
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
+import { withRouter } from 'react-router-dom'
 import { loadUser, loadStarred } from '../actions'
 import User from '../components/User'
 import Repo from '../components/Repo'
@@ -23,13 +26,13 @@ class UserPage extends Component {
     loadStarred: PropTypes.func.isRequired
   }
 
-  componentWillMount() {
+  componentDidMount() {
     loadData(this.props)
   }
 
-  componentWillReceiveProps(nextProps) {
-    if (nextProps.login !== this.props.login) {
-      loadData(nextProps)
+  componentDidUpdate(prevProps) {
+    if (prevProps.login !== this.props.login) {
+      loadData(this.props)
     }
   }
 
@@ -70,7 +73,7 @@ class UserPage extends Component {
 const mapStateToProps = (state, ownProps) => {
   // We need to lower case the login due to the way GitHub's API behaves.
   // Have a look at ../middleware/api.js for more details.
-  const login = ownProps.params.login.toLowerCase()
+  const login = ownProps.match.params.login.toLowerCase()
 
   const {
     pagination: { starredByUser },
@@ -90,7 +93,7 @@ const mapStateToProps = (state, ownProps) => {
   }
 }
 
-export default connect(mapStateToProps, {
+export default withRouter(connect(mapStateToProps, {
   loadUser,
   loadStarred
-})(UserPage)
+})(UserPage))

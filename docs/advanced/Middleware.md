@@ -1,6 +1,13 @@
+---
+id: middleware
+title: Middleware
+description: 'Advanced Tutorial > Middleware: How middleware enable adding additional capabilities to the Redux store'
+hide_title: true
+---
+
 # Middleware
 
-You've seen middleware in action in the [Async Actions](../advanced/AsyncActions.md) example. If you've used server-side libraries like [Express](http://expressjs.com/) and [Koa](http://koajs.com/), you were also probably already familiar with the concept of *middleware*. In these frameworks, middleware is some code you can put between the framework receiving a request, and the framework generating a response. For example, Express or Koa middleware may add CORS headers, logging, compression, and more. The best feature of middleware is that it's composable in a chain. You can use multiple independent third-party middleware in a single project.
+You've seen middleware in action in the [Async Actions](../advanced/AsyncActions.md) example. If you've used server-side libraries like [Express](http://expressjs.com/) and [Koa](http://koajs.com/), you were also probably already familiar with the concept of _middleware_. In these frameworks, middleware is some code you can put between the framework receiving a request, and the framework generating a response. For example, Express or Koa middleware may add CORS headers, logging, compression, and more. The best feature of middleware is that it's composable in a chain. You can use multiple independent third-party middleware in a single project.
 
 Redux middleware solves different problems than Express or Koa middleware, but in a conceptually similar way. **It provides a third-party extension point between dispatching an action, and the moment it reaches the reducer.** People use Redux middleware for logging, crash reporting, talking to an asynchronous API, routing, and more.
 
@@ -16,17 +23,17 @@ One of the benefits of Redux is that it makes state changes predictable and tran
 
 Wouldn't it be nice if we logged every action that happens in the app, together with the state computed after it? When something goes wrong, we can look back at our log, and figure out which action corrupted the state.
 
-<img src='http://i.imgur.com/BjGBlES.png' width='70%'>
+<img src='https://i.imgur.com/BjGBlES.png' width='70%' />
 
 How do we approach this with Redux?
 
 ### Attempt #1: Logging Manually
 
-The most naïve solution is just to log the action and the next state yourself every time you call [`store.dispatch(action)`](../api/Store.md#dispatch). It's not really a solution, but just a first step towards understanding the problem.
+The most naïve solution is just to log the action and the next state yourself every time you call [`store.dispatch(action)`](../api/Store.md#dispatchaction). It's not really a solution, but just a first step towards understanding the problem.
 
->##### Note
-
->If you're using [react-redux](https://github.com/gaearon/react-redux) or similar bindings, you likely won't have direct access to the store instance in your components. For the next few paragraphs, just assume you pass the store down explicitly.
+> ##### Note
+>
+> If you're using [react-redux](https://github.com/reduxjs/react-redux) or similar bindings, you likely won't have direct access to the store instance in your components. For the next few paragraphs, just assume you pass the store down explicitly.
 
 Say, you call this when creating a todo:
 
@@ -37,7 +44,7 @@ store.dispatch(addTodo('Use Redux'))
 To log the action and state, you can change it to something like this:
 
 ```js
-let action = addTodo('Use Redux')
+const action = addTodo('Use Redux')
 
 console.log('dispatching', action)
 store.dispatch(action)
@@ -71,7 +78,7 @@ We could end this here, but it's not very convenient to import a special functio
 What if we just replace the `dispatch` function on the store instance? The Redux store is just a plain object with [a few methods](../api/Store.md), and we're writing JavaScript, so we can just monkeypatch the `dispatch` implementation:
 
 ```js
-let next = store.dispatch
+const next = store.dispatch
 store.dispatch = function dispatchAndLog(action) {
   console.log('dispatching', action)
   let result = next(action)
@@ -80,7 +87,7 @@ store.dispatch = function dispatchAndLog(action) {
 }
 ```
 
-This is already closer to what we want!  No matter where we dispatch an action, it is guaranteed to be logged. Monkeypatching never feels right, but we can live with this for now.
+This is already closer to what we want! No matter where we dispatch an action, it is guaranteed to be logged. Monkeypatching never feels right, but we can live with this for now.
 
 ### Problem: Crash Reporting
 
@@ -96,7 +103,7 @@ If logging and crash reporting are separate utilities, they might look like this
 
 ```js
 function patchStoreToAddLogging(store) {
-  let next = store.dispatch
+  const next = store.dispatch
   store.dispatch = function dispatchAndLog(action) {
     console.log('dispatching', action)
     let result = next(action)
@@ -106,7 +113,7 @@ function patchStoreToAddLogging(store) {
 }
 
 function patchStoreToAddCrashReporting(store) {
-  let next = store.dispatch
+  const next = store.dispatch
   store.dispatch = function dispatchAndReportErrors(action) {
     try {
       return next(action)
@@ -135,11 +142,11 @@ Still, this isn't nice.
 
 ### Attempt #4: Hiding Monkeypatching
 
-Monkeypatching is a hack. “Replace any method you like”, what kind of API is that? Let's figure out the essence of it instead. Previously, our functions replaced `store.dispatch`. What if they *returned* the new `dispatch` function instead?
+Monkeypatching is a hack. “Replace any method you like”, what kind of API is that? Let's figure out the essence of it instead. Previously, our functions replaced `store.dispatch`. What if they _returned_ the new `dispatch` function instead?
 
 ```js
 function logger(store) {
-  let next = store.dispatch
+  const next = store.dispatch
 
   // Previously:
   // store.dispatch = function dispatchAndLog(action) {
@@ -161,9 +168,7 @@ function applyMiddlewareByMonkeypatching(store, middlewares) {
   middlewares.reverse()
 
   // Transform dispatch function with each middleware.
-  middlewares.forEach(middleware =>
-    store.dispatch = middleware(store)
-  )
+  middlewares.forEach(middleware => (store.dispatch = middleware(store)))
 }
 ```
 
@@ -173,7 +178,7 @@ We could use it to apply multiple middleware like this:
 applyMiddlewareByMonkeypatching(store, [logger, crashReporter])
 ```
 
-However, it is still monkeypatching.  
+However, it is still monkeypatching.
 The fact that we hide it inside the library doesn't alter this fact.
 
 ### Attempt #5: Removing Monkeypatching
@@ -183,7 +188,7 @@ Why do we even overwrite `dispatch`? Of course, to be able to call it later, but
 ```js
 function logger(store) {
   // Must point to the function returned by the previous middleware:
-  let next = store.dispatch
+  const next = store.dispatch
 
   return function dispatchAndLog(action) {
     console.log('dispatching', action)
@@ -254,22 +259,24 @@ function applyMiddleware(store, middlewares) {
   middlewares = middlewares.slice()
   middlewares.reverse()
   let dispatch = store.dispatch
-  middlewares.forEach(middleware =>
-    dispatch = middleware(store)(dispatch)
-  )
+  middlewares.forEach(middleware => (dispatch = middleware(store)(dispatch)))
   return Object.assign({}, store, { dispatch })
 }
 ```
 
 The implementation of [`applyMiddleware()`](../api/applyMiddleware.md) that ships with Redux is similar, but **different in three important aspects**:
 
-* It only exposes a subset of the [store API](../api/Store.md) to the middleware: [`dispatch(action)`](../api/Store.md#dispatch) and [`getState()`](../api/Store.md#getState).
+- It only exposes a subset of the [store API](../api/Store.md) to the middleware: [`dispatch(action)`](../api/Store.md#dispatchaction) and [`getState()`](../api/Store.md#getState).
 
-* It does a bit of trickery to make sure that if you call `store.dispatch(action)` from your middleware instead of `next(action)`, the action will actually travel the whole middleware chain again, including the current middleware. This is useful for asynchronous middleware, as we have seen [previously](AsyncActions.md).
+- It does a bit of trickery to make sure that if you call `store.dispatch(action)` from your middleware instead of `next(action)`, the action will actually travel the whole middleware chain again, including the current middleware. This is useful for asynchronous middleware, as we have seen [previously](AsyncActions.md). There is one caveat when calling `dispatch` during setup, described below.
 
-* To ensure that you may only apply middleware once, it operates on `createStore()` rather than on `store` itself. Instead of `(store, middlewares) => store`, its signature is `(...middlewares) => (createStore) => createStore`.
+- To ensure that you may only apply middleware once, it operates on `createStore()` rather than on `store` itself. Instead of `(store, middlewares) => store`, its signature is `(...middlewares) => (createStore) => createStore`.
 
 Because it is cumbersome to apply functions to `createStore()` before using it, `createStore()` accepts an optional last argument to specify such functions.
+
+#### Caveat: Dispatching During Setup
+
+While `applyMiddleware` executes and sets up your middleware, the `store.dispatch` function will point to the vanilla version provided by `createStore`. Dispatching would result in no other middleware being applied. If you are expecting an interaction with another middleware during setup, you will probably be disappointed. Because of this unexpected behavior, `applyMiddleware` will throw an error if you try to dispatch an action before the set up completes. Instead, you should either communicate directly with that other middleware via a common object (for an API-calling middleware, this may be your API client object) or waiting until after the middleware is constructed with a callback.
 
 ### The Final Approach
 
@@ -304,8 +311,8 @@ Here's how to apply it to a Redux store:
 ```js
 import { createStore, combineReducers, applyMiddleware } from 'redux'
 
-let todoApp = combineReducers(reducers)
-let store = createStore(
+const todoApp = combineReducers(reducers)
+const store = createStore(
   todoApp,
   // applyMiddleware() tells createStore() how to handle middleware
   applyMiddleware(logger, crashReporter)
@@ -334,7 +341,7 @@ const logger = store => next => action => {
   console.info('dispatching', action)
   let result = next(action)
   console.log('next state', store.getState())
-  console.groupEnd(action.type)
+  console.groupEnd()
   return result
 }
 
@@ -365,10 +372,7 @@ const timeoutScheduler = store => next => action => {
     return next(action)
   }
 
-  let timeoutId = setTimeout(
-    () => next(action),
-    action.meta.delay
-  )
+  const timeoutId = setTimeout(() => next(action), action.meta.delay)
 
   return function cancel() {
     clearTimeout(timeoutId)
@@ -381,7 +385,7 @@ const timeoutScheduler = store => next => action => {
  * this case.
  */
 const rafScheduler = store => next => {
-  let queuedActions = []
+  const queuedActions = []
   let frame = null
 
   function loop() {
@@ -442,7 +446,7 @@ const readyStatePromise = store => next => action => {
   }
 
   function makeAction(ready, data) {
-    let newAction = Object.assign({}, action, { ready }, data)
+    const newAction = Object.assign({}, action, { ready }, data)
     delete newAction.promise
     return newAction
   }
@@ -469,8 +473,8 @@ const thunk = store => next => action =>
     : next(action)
 
 // You can use all of them! (It doesn't mean you should.)
-let todoApp = combineReducers(reducers)
-let store = createStore(
+const todoApp = combineReducers(reducers)
+const store = createStore(
   todoApp,
   applyMiddleware(
     rafScheduler,
