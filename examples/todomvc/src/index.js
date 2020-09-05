@@ -24,8 +24,8 @@ const composeEnhancers =
     : compose
 
 
-// const store = createStore(reducer, compose(...enhancers))
-const store = createStore(reducer, middlewareEnhancer)
+const store = createStore(reducer, composeEnhancers(...enhancers))
+// const store = createStore(reducer, middlewaenhancersreEnhancer)
 setStore(store)
 
 render(
